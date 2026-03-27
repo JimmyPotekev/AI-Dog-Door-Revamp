@@ -1,0 +1,35 @@
+@startuml
+actor Dog
+participant DistanceSensor
+participant DogDoorFSM
+participant DogDoorHardware
+participant Camera
+participant Servo
+
+Dog -> DistanceSensor : approaches
+DistanceSensor -> DogDoorFSM : motion_detected
+
+DogDoorFSM -> DogDoorFSM : transition(IDLE -> VERIFYING)
+DogDoorFSM -> Camera : power_on()
+
+DogDoorFSM -> Camera : detect_dog()
+Camera --> DogDoorFSM : dog_detected
+
+DogDoorFSM -> DogDoorFSM : confirm_count++
+
+DogDoorFSM -> DogDoorFSM : transition(VERIFYING -> OPENING)
+DogDoorFSM -> DogDoorHardware : command_open()
+DogDoorHardware -> Servo : set_angle(open)
+
+DogDoorFSM -> DogDoorFSM : wait_until_open
+DogDoorFSM -> DogDoorFSM : transition(OPENING -> OPEN)
+
+DogDoorFSM -> Camera : detect_dog()
+DogDoorFSM -> DogDoorFSM : extend_timer
+
+DogDoorFSM -> DogDoorFSM : transition(OPEN -> CLOSING)
+DogDoorFSM -> DogDoorHardware : command_close()
+DogDoorHardware -> Servo : set_angle(close)
+
+DogDoorFSM -> DogDoorFSM : transition(CLOSING -> IDLE)
+@enduml

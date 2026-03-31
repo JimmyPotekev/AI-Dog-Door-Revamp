@@ -2,16 +2,21 @@
 
 ## 📦 Objects / Class Managers
 
-### 🚪 DoorOperator
+### 🚪 DogDoorController
 - Main controller of **door state, behavior, and operation**
+- FSM
+- High level control
+- Does NOT perform work, simply reads flags/status/events, and controlls accordingly
 - Owns:
-  - Camera(s)
-  - Sensor(s)
-  - Servo(s)
-- Consider abstracting servos into a general `Door` object
-
+  - DogDoorHardware
 
 ---
+
+### DogDoorHardware
+- Contains:
+  - Cameras
+  - Sensors
+  - Servos
 
 ### 📷 Camera
 - System includes:
@@ -73,6 +78,15 @@ or use a score that rises on detection, and decays otherwise.
   - **Test**
     - Log level = Info
     - Uses dummy or mock components. No hardware used.
+
+---
+
+### Threads
+- Threads should only do work and provide information. They should NOT modify the FSM state. 
+- FSM remains master controller, a random threads should not modify this. 
+- A thread can perform a task.
+- A thread can retrieve information and signal to the controller that an event happened.
+- A thread can queue events. The controller checks this queue. 
 
 ---
 

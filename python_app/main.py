@@ -1,3 +1,6 @@
+# General
+from time import sleep
+# Components
 from .config import config_system
 from . import dog_door_controller as ddc
 
@@ -8,13 +11,14 @@ logger = getLogger(__name__)
 
 def main() -> None:
     config_system()
-    
-    # logg testing
-    logger.info("Log message word")
-    logger.warning("warning message")
 
-    # controller testing
+    # Create Dog Door Controller 
     controller = ddc.DogDoorController()
-    controller.log()
+    
+
+    while(True):
+        # continuously update system state
+        controller.update()
+        sleep(1.5)
 
     

@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -e
-source 
+
 python3 -m python_app "$@"

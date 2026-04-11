@@ -44,7 +44,7 @@ class DogDoorHardware():
 ##      SERVO OPERATIONS
 #######################################################################
     
-    def open_door(self) -> None:
+    def open_doors(self) -> None:
         logger.info("Opening Doors")
 
         futures = []
@@ -84,4 +84,7 @@ class DogDoorHardware():
 
     def turn_off_camera(self) -> None:
         pass
+
+    def camera_is_on(self) -> bool:
+        return False
     

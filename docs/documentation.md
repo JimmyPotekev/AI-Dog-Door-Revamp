@@ -97,7 +97,9 @@ or use a score that rises on detection, and decays otherwise.
 The underlying principle/operation of this automated door system is an FSM(finite state machine). It has predefined modes of operation. Transitions between modes are dependent on data collected and processed by the external sensors. 
 
 **States**
-- IDLE - Polls for distance. If distance < some threshold for some duration of time, transition to verifying dog detection
+- IDLE 
+  - Polls for distance. If distance < some threshold for some duration of time, transition to verifying dog detection
+  - CONSIDERATION: keep servos in IDLE, i.e. cut off their power entirely until necessary. This may require additional hardware setup. 
 - VERIFYING - Runs object recognition to detect a dog.
 - OPEN - Opens the door and 
 - CLOSING - Turns off camera and transitions back to IDLE. 

@@ -107,9 +107,13 @@ class DogDoorController:
         #   _exit_opening (keep camera on)
         #   transition_to OPEN
 
-
+    # NOTE: this state seems somewhat useless. may change later, or add more fault detection here. tbd. 
+    #  consider enabling power to servos since they may be powered off in IDLE. For now they're always on.
     def _update_opening(self) -> None:
         logger.info("Updating in OPENING mode")
+        logger.info("Opening the doors")
+        self.hardware.open_doors()
+        self._transition_to(State.OPEN)
 
 
     def _update_open(self) -> None:
@@ -197,7 +201,10 @@ class DogDoorController:
             case State.OPENING:
                 pass
             case State.OPEN:
-                pass
+                # turn on camera if it's not already on
+                if not self.hardware.camera_is_on():
+                    logger.info("Turning on camera")
+                    self.hardware.turn_on_camera()
             case State.CLOSING:
                 pass
         

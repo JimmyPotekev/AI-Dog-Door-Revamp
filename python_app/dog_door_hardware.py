@@ -74,5 +74,14 @@ class DogDoorHardware():
 ##      CAMERA OPERATIONS
 #######################################################################
 
-    def dog_detected(self) -> bool:
+    def dog_in_frame(self) -> bool:
         return False
+    
+
+    def turn_on_camera(self) -> None:
+        pass
+
+
+    def turn_off_camera(self) -> None:
+        pass
+    

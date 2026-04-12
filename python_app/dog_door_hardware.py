@@ -57,7 +57,7 @@ class DogDoorHardware():
         logger.info("Doors opened")       
 
 
-    def close_door(self) -> None:
+    def close_doors(self) -> None:
         logger.info("Closing Doors")
 
         futures = []
@@ -88,3 +88,8 @@ class DogDoorHardware():
     def camera_is_on(self) -> bool:
         return False
     
+    def pause_camera(self) -> None:
+        pass
+    
+    def wait_for_camera(self) -> None:
+        pass

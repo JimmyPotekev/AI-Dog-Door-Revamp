@@ -118,22 +118,35 @@ class DogDoorController:
 
     def _update_open(self) -> None:
         logger.info("Updating in OPEN mode")
+        
+        # NOTE: might need to move the duration check into the camera process. Will require synchronization 
+        # perform recognition check
+        if self.hardware.dog_in_frame():
+            self.vision_count += 1
+        else:
+            self.vision_count -= 1
 
-        # sleep for some timeout
-        # check for dog again
-
-        # if dog seen:
-        #   reset timeout/add time
-        # else:
-        #   transition_to CLOSING
-
+        # check vision score 
+        if self.vision_count >= 10: # TODO: 10 is a stand-in value. need a more accurate fequency, and not hard coded. 
+            logger.info("Dog detected - holding OPEN")
+            self.hardware.pause_camera()
+            self.hardware.wait_for_camera()
+            return
+        else:
+            logger.info("Timeout - Dog exited frame, transitioning to CLOSING")
+            self._exit_open()
+            self._transition_to(State.CLOSING)
+        
 
     def _update_closing(self) -> None:
         logger.info("Updating in CLOSING mode")
 
-        # closes doors.
+        # close doors.
+        logger.info("Closing the doors")
+        self.hardware.close_doors()
         # maybe double check to ensure camera is off.
         # transition to IDLE
+        self._transition_to(State.IDLE)
         # not sure how necessary this state is.
 
 #######################################################################
@@ -162,6 +175,10 @@ class DogDoorController:
         
         # keep camera on
         if dog_detected:
+             # TODO: move this camera wait to the transition into the open state. otherwise, the camera is paused every update on OPEN.
+            # sleep for some timeout
+            self.hardware.pause_camera()    # tells the camera process to pause execution
+            self.hardware.wait_for_camera() # waits for the camera process to resume execution 
             return
         
         # turn off camera if timeout
@@ -206,7 +223,9 @@ class DogDoorController:
                     logger.info("Turning on camera")
                     self.hardware.turn_on_camera()
             case State.CLOSING:
-                pass
+                if self.hardware.camera_is_on():
+                    logger.info("Turning off camera")
+                    self.hardware.turn_off_camera()
         
         self.state = state
         self.state_entered_at = time.monotonic()

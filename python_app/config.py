@@ -1,9 +1,16 @@
+# General
 import argparse
 import os
 
 from . import log_setup
 from .settings import Settings
 
+# Components
+from .dog_door_hardware import DogDoorHardware
+from .sensor import SensorIntf, FakeSensor, RealSensor
+from .camera import CameraManagerIntf, FakeCameraManager, RealCameraManager
+from .servo import ServoIntf, FakeServo, RealServo
+from .enums import ServoNum
 
 def get_settings() -> Settings:
     parser = argparse.ArgumentParser()
@@ -48,3 +55,35 @@ def config_system() -> None:
     settings = get_settings()
     log_setup.configure_logging(settings)
     log_setup.clear_log_output(settings)
+
+def hardware_factory() -> DogDoorHardware:
+    settings = get_settings()
+    if settings.mode == "prod":
+        return build_prod_system()
+    else:
+        return build_test_system()
+    
+def build_test_system() -> DogDoorHardware:
+    return DogDoorHardware(
+        servos= [FakeServo(ServoNum.SERVO1),
+                 FakeServo(ServoNum.SERVO2),
+                 FakeServo(ServoNum.SERVO3),
+                 FakeServo(ServoNum.SERVO4)],
+        inside_cam = FakeCameraManager(),
+        outside_cam = FakeCameraManager(),
+        inside_sensor = FakeSensor(),
+        outside_sensor = FakeSensor()   
+    )
+
+
+def build_prod_system() -> DogDoorHardware:
+    return DogDoorHardware(
+        servos= [RealServo(ServoNum.SERVO1),
+                 RealServo(ServoNum.SERVO2),
+                 RealServo(ServoNum.SERVO3),
+                 RealServo(ServoNum.SERVO4)],
+        inside_cam = RealCameraManager(),
+        outside_cam = RealCameraManager(),
+        inside_sensor = RealSensor(),
+        outside_sensor = RealSensor()
+    )

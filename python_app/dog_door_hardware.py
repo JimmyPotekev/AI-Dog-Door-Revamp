@@ -1,10 +1,10 @@
 # General
-from typing import Dict
+from typing import Dict, List
 from concurrent.futures import ThreadPoolExecutor, wait
 # Components
-from .servo import Servo
-from .sensor import Sensor
-from .camera import CameraManager
+from .servo import ServoIntf
+from .sensor import SensorIntf
+from .camera import CameraManagerIntf
 # Enums
 from .enums import ServoNum
 
@@ -15,19 +15,25 @@ logger = getLogger(__name__)
 
 class DogDoorHardware():
     
-    def __init__(self):
+    def __init__(self,
+            servos: List[ServoIntf],
+            inside_cam: CameraManagerIntf,
+            outside_cam: CameraManagerIntf,
+            inside_sensor: SensorIntf,
+            outside_sensor: SensorIntf):
         logger.info("Initializing Hardware")
         
-        self.servos: Dict[ServoNum, Servo] = {
-            ServoNum.SERVO1: Servo(ServoNum.SERVO1),
-            ServoNum.SERVO2: Servo(ServoNum.SERVO2),
-            ServoNum.SERVO3: Servo(ServoNum.SERVO3),
-            ServoNum.SERVO4: Servo(ServoNum.SERVO4)
+        self.servos: Dict[ServoNum, ServoIntf] = {
+            ServoNum.SERVO1: servos[0],
+            ServoNum.SERVO2: servos[1],
+            ServoNum.SERVO3: servos[2],
+            ServoNum.SERVO4: servos[3]
         }
         self.servo_executor = ThreadPoolExecutor(max_workers=len(self.servos))
-        self.inside_sensor: Sensor = Sensor()
-        self.outside_sensor: Sensor = Sensor()
-        self.camera: CameraManager = CameraManager()
+        self.inside_cam = inside_cam
+        self.outside_cam = outside_cam
+        self.inside_sensor = inside_sensor
+        self.outside_sensor = outside_sensor
 
         logger.info("Hardware setup complete")    
 
@@ -76,24 +82,24 @@ class DogDoorHardware():
 #######################################################################
 
     def dog_in_frame(self) -> bool:
-        return self.camera.dog_in_frame()
+        return self.inside_cam.dog_in_frame()
     
 
     def turn_on_camera(self) -> None:
-        self.camera.turn_on_camera()
+        self.inside_cam.turn_on_camera()
 
 
     def turn_off_camera(self) -> None:
-        self.camera.turn_on_camera()
+        self.inside_cam.turn_on_camera()
 
 
     def camera_is_on(self) -> bool:
-        return self.camera.is_camera_on()
+        return self.inside_cam.is_camera_on()
 
 
     def pause_camera(self) -> None:
-        self.camera.sleep_until_timeout()
+        self.inside_cam.sleep_until_timeout()
 
-    
+
     def wait_for_camera(self) -> None:
-        self.camera.wait_for_timeout()
+        self.inside_cam.wait_for_timeout()

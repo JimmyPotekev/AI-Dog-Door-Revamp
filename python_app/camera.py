@@ -67,6 +67,7 @@ class CameraManager:
             args=(self.in_queue, self.out_queue),
             daemon=True
         )
+        # TODO: add camera_is_on attribute
 
         logger.info("CameraManager setup complete")
 
@@ -84,4 +85,13 @@ class CameraManager:
 
 
     def get_response(self) -> CameraComm:
+        pass
+
+    
+    def turn_on_camera(self):
+        # debug log if camera is already on
+        pass
+
+    def turn_off_camera(self):
+        # debug log if camera is already off
         pass

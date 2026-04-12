@@ -15,6 +15,8 @@ class ServoNum(Enum):
 
 class CameraComm(Enum):
     CAPTURE_IMG = auto()
-    SHUTDOWN = auto()
-    DOG_FOUND = auto()
-    NO_DOG_FOUND = auto()
+    POWERUP = auto()        # 
+    SHUTDOWN = auto()       #
+    DOG_FOUND = auto()      # 
+    NO_DOG_FOUND = auto()   # signals to the main process that a dog was not found in the image
+    SLEEP_TIMEOUT = auto()  # signals the camera process to sleep, pausing object detection until timeout

@@ -26,6 +26,7 @@ class DogDoorHardware():
         }
         self.servo_executor = ThreadPoolExecutor(max_workers=len(self.servos))
         self.inside_sensor: Sensor = Sensor()
+        self.outside_sensor: Sensor = Sensor()
         self.camera: CameraManager = CameraManager()
 
         logger.info("Hardware setup complete")    
@@ -75,21 +76,24 @@ class DogDoorHardware():
 #######################################################################
 
     def dog_in_frame(self) -> bool:
-        return False
+        return self.camera.dog_in_frame()
     
 
     def turn_on_camera(self) -> None:
-        pass
+        self.camera.turn_on_camera()
 
 
     def turn_off_camera(self) -> None:
-        pass
+        self.camera.turn_on_camera()
+
 
     def camera_is_on(self) -> bool:
-        return False
-    
+        return self.camera.is_camera_on()
+
+
     def pause_camera(self) -> None:
-        pass
+        self.camera.sleep_until_timeout()
+
     
     def wait_for_camera(self) -> None:
-        pass
+        self.camera.wait_for_timeout()

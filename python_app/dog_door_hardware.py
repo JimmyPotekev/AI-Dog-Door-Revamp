@@ -1,12 +1,9 @@
 # General
-from typing import Dict, List
-from concurrent.futures import ThreadPoolExecutor, wait
 # Components
-from .servo import ServoIntf
+from .door import Door
 from .sensor import SensorIntf
 from .camera import CameraManagerIntf
 # Enums
-from .enums import ServoNum
 
 # logger
 from logging import getLogger
@@ -16,20 +13,14 @@ logger = getLogger(__name__)
 class DogDoorHardware():
     
     def __init__(self,
-            servos: List[ServoIntf],
+            door: Door,
             inside_cam: CameraManagerIntf,
             outside_cam: CameraManagerIntf,
             inside_sensor: SensorIntf,
             outside_sensor: SensorIntf):
         logger.info("Initializing Hardware")
         
-        self.servos: Dict[ServoNum, ServoIntf] = {
-            ServoNum.SERVO1: servos[0],
-            ServoNum.SERVO2: servos[1],
-            ServoNum.SERVO3: servos[2],
-            ServoNum.SERVO4: servos[3]
-        }
-        self.servo_executor = ThreadPoolExecutor(max_workers=len(self.servos))
+        self.door = door
         self.inside_cam = inside_cam
         self.outside_cam = outside_cam
         self.inside_sensor = inside_sensor
@@ -52,30 +43,11 @@ class DogDoorHardware():
 #######################################################################
     
     def open_doors(self) -> None:
-        logger.info("Opening Doors")
-
-        futures = []
-        for servo_num, servo in self.servos.items():
-            logger.info("Opening servo #%s", servo_num.name)
-            futures.append(self.servo_executor.submit(servo.open))
-
-        wait(futures)    
-
-        logger.info("Doors opened")       
+        self.door.open_doors()  
 
 
     def close_doors(self) -> None:
-        logger.info("Closing Doors")
-
-        futures = []
-        for servo_num, servo in self.servos.items():
-            logger.info("Closing servo #%s", servo_num.name)
-            futures.append(self.servo_executor.submit(servo.close))
-        
-        wait(futures)
-
-        logger.info("Doors closed")
-
+        self.door.close_doors()
 
 #######################################################################
 ##      CAMERA OPERATIONS

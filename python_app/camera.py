@@ -56,7 +56,8 @@ def camera_process_main(in_queue: Queue, out_queue: Queue) -> None:
 ################################################################################
 # CAMERA MANAGER - Wrapper class for communicating with the camera process     #
 ################################################################################
-
+# NOTE: might not need an interface for the camera manager as it does not contain or represent a hardware component. 
+# the camera worker is the actual camera hardware. this would need an interface instead. 
 class CameraManagerIntf(ABC):
     
 # PUBLIC

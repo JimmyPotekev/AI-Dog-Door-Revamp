@@ -10,6 +10,8 @@ from .dog_door_hardware import DogDoorHardware
 from .sensor import SensorIntf, FakeSensor, RealSensor
 from .camera import CameraManagerIntf, FakeCameraManager, RealCameraManager
 from .servo import ServoIntf, FakeServo, RealServo
+from .door import Door
+# Enums
 from .enums import ServoNum
 
 def get_settings() -> Settings:
@@ -64,11 +66,13 @@ def hardware_factory() -> DogDoorHardware:
         return build_test_system()
     
 def build_test_system() -> DogDoorHardware:
-    return DogDoorHardware(
-        servos= [FakeServo(ServoNum.SERVO1),
+    # NOTE: not sure what the lifetime of door or other components will be here. may not persist outside this function
+    door = Door([FakeServo(ServoNum.SERVO1),
                  FakeServo(ServoNum.SERVO2),
                  FakeServo(ServoNum.SERVO3),
-                 FakeServo(ServoNum.SERVO4)],
+                 FakeServo(ServoNum.SERVO4)])
+    return DogDoorHardware(
+        door=door,
         inside_cam = FakeCameraManager(),
         outside_cam = FakeCameraManager(),
         inside_sensor = FakeSensor(),
@@ -77,11 +81,13 @@ def build_test_system() -> DogDoorHardware:
 
 
 def build_prod_system() -> DogDoorHardware:
-    return DogDoorHardware(
-        servos= [RealServo(ServoNum.SERVO1),
+    # NOTE: not sure what the lifetime of door or other components will be here. may not persist outside this function
+    door = Door([RealServo(ServoNum.SERVO1),
                  RealServo(ServoNum.SERVO2),
                  RealServo(ServoNum.SERVO3),
-                 RealServo(ServoNum.SERVO4)],
+                 RealServo(ServoNum.SERVO4)])
+    return DogDoorHardware(
+        door = door,
         inside_cam = RealCameraManager(),
         outside_cam = RealCameraManager(),
         inside_sensor = RealSensor(),

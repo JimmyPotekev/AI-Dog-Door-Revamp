@@ -19,7 +19,7 @@ def main() -> None:
     # Setup system hardware and controller
     
     hardware = hardware_factory()
-    controller = ddc.DogDoorController(hardware=hardware)
+    controller = ddc.DogDoorController(hw=hardware)
     
 
     while(True):

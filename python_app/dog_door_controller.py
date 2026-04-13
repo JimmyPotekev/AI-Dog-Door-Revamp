@@ -12,7 +12,7 @@ logger = getLogger(__name__)
 
 @dataclass
 class DogDoorController:
-    hardware: DogDoorHardware
+    hw: DogDoorHardware
     state: State = State.IDLE
     state_entered_at: float = field(default_factory=time.monotonic)
     verify_timeout_s: float = 3.0
@@ -58,8 +58,8 @@ class DogDoorController:
         logger.info("Updating in IDLE mode")
 
         # take distance measurements
-        distance = self.hardware.get_distance()
-        threshold = self.hardware.get_sensor_threshold()
+        distance = self.hw.get_distance()
+        threshold = self.hw.get_sensor_threshold()
 
         logger.info("Sensor Distance: %f", distance)
 
@@ -84,7 +84,7 @@ class DogDoorController:
         logger.info("Updating in VERIFYING mode")
 
         # perform recognition check
-        if self.hardware.dog_in_frame():
+        if self.hw.dog_in_frame():
             self.vision_count += 1
         else:
             self.vision_count -= 1
@@ -112,7 +112,7 @@ class DogDoorController:
     def _update_opening(self) -> None:
         logger.info("Updating in OPENING mode")
         logger.info("Opening the doors")
-        self.hardware.open_doors()
+        self.hw.open_doors()
         self._transition_to(State.OPEN)
 
 
@@ -121,7 +121,7 @@ class DogDoorController:
         
         # NOTE: might need to move the duration check into the camera process. Will require synchronization 
         # perform recognition check
-        if self.hardware.dog_in_frame():
+        if self.hw.dog_in_frame():
             self.vision_count += 1
         else:
             self.vision_count -= 1
@@ -129,8 +129,8 @@ class DogDoorController:
         # check vision score 
         if self.vision_count >= 10: # TODO: 10 is a stand-in value. need a more accurate fequency, and not hard coded. 
             logger.info("Dog detected - holding OPEN")
-            self.hardware.pause_camera()
-            self.hardware.wait_for_camera()
+            self.hw.pause_camera()
+            self.hw.wait_for_camera()
             return
         else:
             logger.info("Timeout - Dog exited frame, transitioning to CLOSING")
@@ -143,7 +143,7 @@ class DogDoorController:
 
         # close doors.
         logger.info("Closing the doors")
-        self.hardware.close_doors()
+        self.hw.close_doors()
         # maybe double check to ensure camera is off.
         # transition to IDLE
         self._transition_to(State.IDLE)
@@ -177,13 +177,13 @@ class DogDoorController:
         if dog_detected:
              # TODO: move this camera wait to the transition into the open state. otherwise, the camera is paused every update on OPEN.
             # sleep for some timeout
-            self.hardware.pause_camera()    # tells the camera process to pause execution
-            self.hardware.wait_for_camera() # waits for the camera process to resume execution 
+            self.hw.pause_camera()    # tells the camera process to pause execution
+            self.hw.wait_for_camera() # waits for the camera process to resume execution 
             return
         
         # turn off camera if timeout
         logger.info("Turning off camera")
-        self.hardware.turn_off_camera()
+        self.hw.turn_off_camera()
 
 
     def _exit_opening(self) -> None:
@@ -214,18 +214,18 @@ class DogDoorController:
                 pass
             case State.VERIFYING:
                 logger.info("Turning on camera")
-                self.hardware.turn_on_camera()
+                self.hw.turn_on_camera()
             case State.OPENING:
                 pass
             case State.OPEN:
                 # turn on camera if it's not already on
-                if not self.hardware.camera_is_on():
+                if not self.hw.camera_is_on():
                     logger.info("Turning on camera")
-                    self.hardware.turn_on_camera()
+                    self.hw.turn_on_camera()
             case State.CLOSING:
-                if self.hardware.camera_is_on():
+                if self.hw.camera_is_on():
                     logger.info("Turning off camera")
-                    self.hardware.turn_off_camera()
+                    self.hw.turn_off_camera()
         
         self.state = state
         self.state_entered_at = time.monotonic()

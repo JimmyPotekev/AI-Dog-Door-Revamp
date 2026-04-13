@@ -38,15 +38,15 @@ class RealServo(ServoIntf):
 class FakeServo(ServoIntf):
 
     def __init__(self, servo_num: ServoNum) -> None:
-        logger.info("Initializing Servo")
+        logger.info("Initializing FakeServo")
         self.servo_num: ServoNum = servo_num
-        logger.info("Servo setup complete")
+        logger.info("FakeServo setup complete")
 
 
     def open(self) -> None:
-        pass
+        logger.info("Servo %s setting to 90 degrees", self.servo_num)
 
 
     def close(self) -> None:
-        pass
+        logger.info("Servo %s setting to 0 degrees", self.servo_num)
     

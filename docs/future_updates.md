@@ -34,4 +34,6 @@ Currently, the system operates entirely on its own, independent of human input. 
 
 ## System Level
 
+### Outdoor Half of the Door System
+Issue: the system is currently being implemented only considering the indoor portion of the door. So no outdoor, sensor, camera, or servos. 
 

@@ -1,12 +1,9 @@
 # General
-from typing import Dict
-from concurrent.futures import ThreadPoolExecutor, wait
 # Components
-from .servo import Servo
-from .sensor import Sensor
-from .camera import CameraManager
+from .door import Door
+from .sensor import SensorIntf
+from .camera import CameraManagerIntf
 # Enums
-from .enums import ServoNum
 
 # logger
 from logging import getLogger
@@ -15,18 +12,19 @@ logger = getLogger(__name__)
 
 class DogDoorHardware():
     
-    def __init__(self):
+    def __init__(self,
+            door: Door,
+            inside_cam: CameraManagerIntf,
+            outside_cam: CameraManagerIntf,
+            inside_sensor: SensorIntf,
+            outside_sensor: SensorIntf):
         logger.info("Initializing Hardware")
         
-        self.servos: Dict[ServoNum, Servo] = {
-            ServoNum.SERVO1: Servo(ServoNum.SERVO1),
-            ServoNum.SERVO2: Servo(ServoNum.SERVO2),
-            ServoNum.SERVO3: Servo(ServoNum.SERVO3),
-            ServoNum.SERVO4: Servo(ServoNum.SERVO4)
-        }
-        self.servo_executor = ThreadPoolExecutor(max_workers=len(self.servos))
-        self.inside_sensor: Sensor = Sensor()
-        self.camera: CameraManager = CameraManager()
+        self.door = door
+        self.inside_cam = inside_cam
+        self.outside_cam = outside_cam
+        self.inside_sensor = inside_sensor
+        self.outside_sensor = outside_sensor
 
         logger.info("Hardware setup complete")    
 
@@ -45,51 +43,35 @@ class DogDoorHardware():
 #######################################################################
     
     def open_doors(self) -> None:
-        logger.info("Opening Doors")
-
-        futures = []
-        for servo_num, servo in self.servos.items():
-            logger.info("Opening servo #%s", servo_num.name)
-            futures.append(self.servo_executor.submit(servo.open))
-
-        wait(futures)    
-
-        logger.info("Doors opened")       
+        self.door.open_doors()  
 
 
     def close_doors(self) -> None:
-        logger.info("Closing Doors")
-
-        futures = []
-        for servo_num, servo in self.servos.items():
-            logger.info("Closing servo #%s", servo_num.name)
-            futures.append(self.servo_executor.submit(servo.close))
-        
-        wait(futures)
-
-        logger.info("Doors closed")
-
+        self.door.close_doors()
 
 #######################################################################
 ##      CAMERA OPERATIONS
 #######################################################################
 
     def dog_in_frame(self) -> bool:
-        return False
+        return self.inside_cam.dog_in_frame()
     
 
     def turn_on_camera(self) -> None:
-        pass
+        self.inside_cam.turn_on_camera()
 
 
     def turn_off_camera(self) -> None:
-        pass
+        self.inside_cam.turn_on_camera()
+
 
     def camera_is_on(self) -> bool:
-        return False
-    
+        return self.inside_cam.is_camera_on()
+
+
     def pause_camera(self) -> None:
-        pass
-    
+        self.inside_cam.sleep_until_timeout()
+
+
     def wait_for_camera(self) -> None:
-        pass
+        self.inside_cam.wait_for_timeout()

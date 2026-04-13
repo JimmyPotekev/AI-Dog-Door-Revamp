@@ -1,5 +1,6 @@
 # General
 from multiprocessing import Process, Queue
+from abc import ABC, abstractmethod
 # Components
 from .cv_model import CVModel
 from .enums import CameraComm
@@ -55,8 +56,54 @@ def camera_process_main(in_queue: Queue, out_queue: Queue) -> None:
 ################################################################################
 # CAMERA MANAGER - Wrapper class for communicating with the camera process     #
 ################################################################################
+# NOTE: might not need an interface for the camera manager as it does not contain or represent a hardware component. 
+# the camera worker is the actual camera hardware. this would need an interface instead. 
+class CameraManagerIntf(ABC):
+    
+# PUBLIC
+    @abstractmethod
+    def start(self) -> None:
+        pass
 
-class CameraManager:
+    @abstractmethod
+    def join(self) -> None:
+        pass
+    
+    @abstractmethod
+    def turn_on_camera(self) -> None:
+        pass
+
+    @abstractmethod
+    def turn_off_camera(self) -> None:
+        pass
+
+    @abstractmethod
+    def is_camera_on(self) -> bool:
+        pass
+
+    @abstractmethod
+    def dog_in_frame(self) -> bool:
+        pass
+
+    @abstractmethod
+    def sleep_until_timeout(self) -> None:
+        pass
+
+    @abstractmethod
+    def wait_for_timeout(self) -> None:
+        pass
+
+# PRIVATE
+    @abstractmethod
+    def _send_command(self, cmd: CameraComm):
+        pass
+
+    @abstractmethod
+    def _get_response(self) -> CameraComm:
+        pass
+
+
+class RealCameraManager(CameraManagerIntf):
     def __init__(self) -> None:
         logger.info("Initializing CameraManager")
         
@@ -71,7 +118,7 @@ class CameraManager:
 
         logger.info("CameraManager setup complete")
 
-
+# PUBLIC
     def start(self):
         self.process.start()
 
@@ -79,19 +126,92 @@ class CameraManager:
     def join(self):
         self.process.join()
 
-
-    def send_command(self, cmd: CameraComm):
+    
+    def turn_on_camera(self):
+        # debug log if camera is already on
         pass
 
 
-    def get_response(self) -> CameraComm:
+    def turn_off_camera(self):
+        # debug log if camera is already off
         pass
+
+    def is_camera_on(self) -> bool:
+        return False
+
+
+    def dog_in_frame(self) -> bool:
+        pass
+
+
+    def sleep_until_timeout(self) -> None:
+        pass
+
+
+    def wait_for_timeout(self) -> None:
+        pass
+
+# PRIVATE
+    def _send_command(self, cmd: CameraComm):
+        pass
+
+
+    def _get_response(self) -> CameraComm:
+        pass
+
+
+class FakeCameraManager(CameraManagerIntf):
+    def __init__(self) -> None:
+        logger.info("Initializing CameraManager")
+        
+        self.in_queue: Queue = Queue()
+        self.out_queue = Queue()
+        self.process: Process = Process(
+            target=camera_process_main,
+            args=(self.in_queue, self.out_queue),
+            daemon=True
+        )
+        # TODO: add camera_is_on attribute
+
+        logger.info("CameraManager setup complete")
+
+# PUBLIC
+    def start(self):
+        self.process.start()
+
+
+    def join(self):
+        self.process.join()
 
     
     def turn_on_camera(self):
         # debug log if camera is already on
         pass
 
+
     def turn_off_camera(self):
         # debug log if camera is already off
+        pass
+
+    def is_camera_on(self) -> bool:
+        return False
+
+
+    def dog_in_frame(self) -> bool:
+        pass
+
+
+    def sleep_until_timeout(self) -> None:
+        pass
+
+
+    def wait_for_timeout(self) -> None:
+        pass
+
+# PRIVATE
+    def _send_command(self, cmd: CameraComm):
+        pass
+
+
+    def _get_response(self) -> CameraComm:
         pass

@@ -2,7 +2,7 @@
 # Components
 from .door import Door
 from .sensor import SensorIntf
-from .camera import CameraManagerIntf
+from .camera import CameraManager
 # Enums
 
 # logger
@@ -14,8 +14,8 @@ class DogDoorHardware():
     
     def __init__(self,
             door: Door,
-            inside_cam: CameraManagerIntf,
-            outside_cam: CameraManagerIntf,
+            inside_cam: CameraManager,
+            outside_cam: CameraManager,
             inside_sensor: SensorIntf,
             outside_sensor: SensorIntf):
         logger.info("Initializing Hardware")
@@ -62,7 +62,7 @@ class DogDoorHardware():
 
 
     def turn_off_camera(self) -> None:
-        self.inside_cam.turn_on_camera()
+        self.inside_cam.turn_off_camera()
 
 
     def camera_is_on(self) -> bool:
@@ -75,3 +75,8 @@ class DogDoorHardware():
 
     def wait_for_camera(self) -> None:
         self.inside_cam.wait_for_timeout()
+
+
+    def shutdown(self) -> None:
+        self.inside_cam.shutdown()
+        self.outside_cam.shutdown()

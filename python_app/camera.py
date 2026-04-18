@@ -1,9 +1,14 @@
+from __future__ import annotations
+
 # General
 from multiprocessing import Process, Queue, Semaphore
 from abc import ABC, abstractmethod
+from time import sleep
 # Components
 from .cv_model import CVModel
 from .enums import CameraComm
+from .log_setup import configure_worker_logging
+from .settings import Settings
 # logger
 from logging import getLogger
 
@@ -72,37 +77,88 @@ class FakeCameraWorker(CameraWorkerIntf):
 # CAMERA PROCESS MAIN - Main process for camera and cv work
 #################################################################################
 
-def camera_process_main(in_queue: Queue, out_queue: Queue) -> None:
-    # TODO: need a way to configure RealCameraWorker or FakeCameraWorker based on mode. 
-    camera = CameraWorker()
+def camera_process_main(
+    in_queue: Queue,
+    out_queue: Queue,
+    timeout_sem: Semaphore,
+    log_queue: Queue | None,
+    settings: Settings,
+    use_fake_worker: bool,
+) -> None:
+    configure_worker_logging(settings, log_queue)
 
+    logger.info("Starting camera process")
+    camera: CameraWorkerIntf
+    if use_fake_worker:
+        camera = FakeCameraWorker()
+    else:
+        camera = RealCameraWorker()
+
+    camera_is_on = False
+
+    # Process main loop
     while True:
         cmd = in_queue.get()
 
         match cmd:
+            case CameraComm.CAMERA_ON:
+                camera_is_on = True
+                logger.info("Camera process enabled")
+
+            case CameraComm.CAMERA_OFF:
+                camera_is_on = False
+                logger.info("Camera process disabled")
+
             case CameraComm.CAPTURE_IMG:
+                if not camera_is_on:
+                    logger.debug("Ignoring capture request because camera is off")
+                    out_queue.put(CameraComm.NO_DOG_FOUND)
+                    continue
+
                 dog_found = camera.dog_in_frame()
                 msg = CameraComm.DOG_FOUND if dog_found else CameraComm.NO_DOG_FOUND
                 out_queue.put(msg)
 
+            case CameraComm.SLEEP_TIMEOUT:
+                logger.info("Camera process entering timeout sleep")
+                sleep(0)
+                timeout_sem.release()
+
             case CameraComm.SHUTDOWN:
-                # TODO: perform camera shutdown
+                logger.info("Shutting down camera process")
                 break
+
+    logger.info("Camera process stopped")
 
 ################################################################################
 # CAMERA MANAGER - Wrapper class for communicating with the camera process     #
 ################################################################################
 
 class CameraManager:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        log_queue: Queue | None,
+        use_fake_worker: bool,
+        process_name: str = "CameraProcess",
+    ) -> None:
         logger.info("Initializing CameraManager")
         
         self.in_queue: Queue = Queue(maxsize=1)
         self.out_queue = Queue()
         self.timeout_sem = Semaphore(value=0)
+        self.process_name = process_name
         self.process: Process = Process(
             target=camera_process_main,
-            args=(self.in_queue, self.out_queue, self.timeout_sem),
+            args=(
+                self.in_queue,
+                self.out_queue,
+                self.timeout_sem,
+                log_queue,
+                settings,
+                use_fake_worker,
+            ),
+            name=process_name,
             daemon=True
         )
         self.camera_is_on: bool = False
@@ -143,6 +199,7 @@ class CameraManager:
 
     def dog_in_frame(self) -> bool:
         # this check may be too simple. Assumes the camera process will only ever output DOG_FOUND or NO_DOG_FOUND.
+        self.in_queue.put(CameraComm.CAPTURE_IMG)
         return self.out_queue.get() == CameraComm.DOG_FOUND
 
 
@@ -154,6 +211,17 @@ class CameraManager:
     def wait_for_timeout(self) -> None:
         # waits for the camera process to post the timeout semaphore
         self.timeout_sem.acquire()
+
+
+    def shutdown(self) -> None:
+        if not self.process.is_alive():
+            return
+
+        self.in_queue.put(CameraComm.SHUTDOWN)
+        self.process.join(timeout=2)
+
+        if self.process.is_alive():
+            logger.warning("%s did not exit before timeout", self.process_name)
 
 # PRIVATE
     # These are not needed for now. They don't add anything. May expand later.

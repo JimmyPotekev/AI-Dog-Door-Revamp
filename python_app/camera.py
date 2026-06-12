@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 # General
-from multiprocessing import Process, Queue, Semaphore, Event
+import multiprocessing as mp
+# from multiprocessing import Process, Queue, Semaphore, Event
+from multiprocessing.synchronize import Event, Semaphore
 import queue
 from abc import ABC, abstractmethod
 from time import sleep
@@ -106,13 +108,12 @@ class FakeCameraWorker(CameraWorkerIntf):
 # CAMERA PROCESS MAIN - Main process for camera and cv work
 #################################################################################
 
-def camera_process_main(
-    in_queue: Queue,
-    out_queue: Queue,
+def camera_proc_main(
+    in_queue: mp.Queue,
+    out_queue: mp.Queue,
     run_event: Event,
     timeout_sem: Semaphore,
-    idle_sem: Semaphore,
-    log_queue: Queue | None,
+    log_queue: mp.Queue | None,
     settings: Settings,
     use_fake_worker: bool,
 ) -> None:
@@ -131,8 +132,6 @@ def camera_process_main(
     logger.info("Entering camera process main loop")
     while True:
         sleep(0.3)
-        # Camera proccess 'idles' till idle_sem is posted by main process
-        # idle_sem.acquire()
         if not run_event.is_set():
             logger.info("Camera idling...")
             run_event.wait()
@@ -142,29 +141,14 @@ def camera_process_main(
         try:
             cmd = in_queue.get_nowait()
         except queue.Empty:
-            logger.info("No command found")
+            # logger.info("No command found")
+            pass
         logger.info("Cmd: %s", cmd)
 
         match cmd:
-            # case CameraComm.CAPTURE_IMG:
-            #     # if not camera_is_on:
-            #     #     logger.debug("Ignoring capture request because camera is off")
-            #     #     # out_queue.put(CameraComm.NO_DOG_FOUND)
-            #     #     continue
-            #     dog_found = camera.dog_in_frame()
-            #     msg = CameraComm.DOG_FOUND if dog_found else CameraComm.NO_DOG_FOUND
-            #     out_queue.put(msg)
-
-            # NOTE: This command seems useless, if the process is woken by semaphore post instead of the command. 
-            # case CameraComm.CAMERA_ON:
-            #     camera_is_on = True
-            #     logger.info("Camera process enabled")
-            #     camera.turn_on_camera()
-
             case CameraComm.CAMERA_OFF:
                 camera_is_on = False
                 logger.info("Camera process disabled")
-                # idle_sem.aquire()
                 run_event.clear()
                 continue
 
@@ -172,12 +156,12 @@ def camera_process_main(
                 logger.info("Camera process entering timeout sleep")
                 # TODO: sleep time should not be hard coded. Somehow need to get this sleep value from the dog_dor_controller. 
                 sleep(3.5)
-                timeout_sem.release() #NOTE might be better as a barrier
+                timeout_sem.release()
 
             case CameraComm.SHUTDOWN:
                 logger.info("Shutting down camera process")
                 break
-
+                
         dog_found = camera.dog_in_frame()
         msg = CameraComm.DOG_FOUND if dog_found else CameraComm.NO_DOG_FOUND
         # NOTE maybe not the best approach to overwrite a stale result
@@ -191,7 +175,7 @@ def camera_process_main(
                 pass    
             out_queue.put(msg)
             
-    logger.info("Camera process stopped")
+    logger.info("Camera process stopped. Now exiting.")
 
 ################################################################################
 # CAMERA MANAGER - Wrapper class for communicating with the camera process     #
@@ -201,26 +185,24 @@ class CameraManager:
     def __init__(
         self,
         settings: Settings,
-        log_queue: Queue | None,
+        log_queue: mp.Queue | None,
         use_fake_worker: bool,
         process_name: str = "CameraProcess",
     ) -> None:
         logger.info("Initializing CameraManager")
         
-        self.in_queue: Queue = Queue(maxsize=1)
-        self.out_queue = Queue()
-        self.run_event = Event()
-        self.timeout_sem = Semaphore(value=0)
-        self.idle_sem = Semaphore(value=0)
+        self.in_queue: mp.Queue = mp.Queue(maxsize=1)
+        self.out_queue = mp.Queue()
+        self.run_event = mp.Event()
+        self.timeout_sem = mp.Semaphore(value=0)
         self.process_name = process_name
-        self.process: Process = Process(
-            target=camera_process_main,
+        self.process: mp.Process = mp.Process(
+            target=camera_proc_main,
             args=(
                 self.in_queue,
                 self.out_queue,
                 self.run_event,
                 self.timeout_sem,
-                self.idle_sem,
                 log_queue,
                 settings,
                 use_fake_worker,
@@ -247,10 +229,7 @@ class CameraManager:
         if self.camera_is_on:
             logger.debug("Camera is already on")
             return
-        # self.in_queue.put(CameraComm.CAMERA_ON)
         
-        # post idle_sem for camera process to resume execution
-        # self.idle_sem.release() 
         self.run_event.set()
         self.camera_is_on = True
 

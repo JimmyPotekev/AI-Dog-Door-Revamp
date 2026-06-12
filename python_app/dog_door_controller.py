@@ -169,7 +169,7 @@ class DogDoorController:
 
     def _exit_verifying(self, dog_detected: bool) -> None:
         """
-            Exits the VERIFYING state. Shutdown the camera depending on if a dog was detected or not.
+            Exits the VERIFYING state. Shutdown the camera if a dog was not detected.
 
             Args:
                 dog_detected (bool): specifies whether the VERIFYING state is exiting due to dog detection or timeout.

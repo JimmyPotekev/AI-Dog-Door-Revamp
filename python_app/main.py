@@ -1,5 +1,6 @@
 # General
 from time import sleep
+from multiprocessing import active_children
 # Components
 from .config import config_system, hardware_factory
 from . import dog_door_controller as ddc
@@ -24,12 +25,19 @@ def main() -> None:
         # Setup system hardware and controller
         hardware = hardware_factory(settings, logging_runtime.log_queue)
         controller = ddc.DogDoorController(hw=hardware)
+        
+        sleep(3) # setup time buffer
 
         while(True):
             # continuously update system state
             controller.update()
+
+
+            # TODO: implement some trigger that logs or pauses when the camera process crashes(is no longer running)
+            if len(active_children()) == 0: # check if camera process is still running
+                logger.error("Camera process has exited")
             # TODO: move sleep to distance sensor update &
-            sleep(1.5)
+            # sleep(1)
     except KeyboardInterrupt:
         logger.info("Shutting down application")
     finally:

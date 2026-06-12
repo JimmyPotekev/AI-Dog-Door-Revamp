@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+echo "Running in test mode"
 set -e
 
 ./scripts/run --mode test "$@"

@@ -36,6 +36,8 @@ class DogDoorController:
 # PUBLIC
     def update(self) -> None:
         logger.info("Upating system state")
+        update_delay = 0.5 if self.state == State.IDLE else 1.75
+        time.sleep(update_delay)
 
         state_update = {
             State.IDLE: self._update_idle ,
@@ -87,7 +89,9 @@ class DogDoorController:
         if self.hw.dog_in_frame():
             self.vision_count += 1
         else:
-            self.vision_count -= 1
+            self.vision_count = max(0, self.vision_count - 1)
+
+        logger.info("vision count: %d", self.vision_count)
 
         # check vision score 
         if self.vision_count >= 10: # TODO: 10 is a stand-in value. need a more accurate fequency, and not hard coded. 
@@ -96,6 +100,7 @@ class DogDoorController:
             self._transition_to(State.OPENING)
             return
         
+        # go back to IDLE if no dog detected after the timeout
         time_verifying = time.monotonic() - self.state_entered_at
         if time_verifying >= self.verify_timeout_s:
             logger.info("Timeout - No dog detected, transitioning to IDLE")
@@ -103,9 +108,7 @@ class DogDoorController:
             self._transition_to(State.IDLE)  
             return
 
-        # if dog detected (using score)
-        #   _exit_opening (keep camera on)
-        #   transition_to OPEN
+        
 
     # NOTE: this state seems somewhat useless. may change later, or add more fault detection here. tbd. 
     #  consider enabling power to servos since they may be powered off in IDLE. For now they're always on.
@@ -129,6 +132,7 @@ class DogDoorController:
         # check vision score 
         if self.vision_count >= 10: # TODO: 10 is a stand-in value. need a more accurate fequency, and not hard coded. 
             logger.info("Dog detected - holding OPEN")
+            # wait for another timeout
             self.hw.pause_camera()
             self.hw.wait_for_camera()
             return
@@ -205,7 +209,7 @@ class DogDoorController:
             Args:
                 state (State): The state being transitioned to.
         """
-        logger.info("Transitioning from %d to %d", self.state, state)
+        logger.info("Transitioning from %s to %s", self.state, state)
 
         # setup for next state
         match state:

@@ -20,14 +20,14 @@ class SensorIntf(ABC):
 
 class RealSensor(SensorIntf):
     def __init__(self) -> None:
-        logger.info("Initializing Sensor")
+        logger.info("Initializing RealSensor")
         
         # TODO: make the threshold distance a constant somewhere OR make an HLC(high level config) class that is passed around 
         # for object creation
         self.threshold = 0.5
         self.sensor: DistanceSensor = DistanceSensor(echo = 17, trigger = 4, threshold_distance = self.threshold)
 
-        logger.info("Sensor setup complete")
+        logger.info("RealSensor setup complete")
          
     def get_distance(self) -> float:
         return self.sensor.distance
@@ -39,14 +39,14 @@ class RealSensor(SensorIntf):
 
 class FakeSensor(SensorIntf):
     def __init__(self) -> None:
-        logger.info("Initializing Sensor")
+        logger.info("Initializing FakeSensor")
         
         # TODO: make the threshold distance a constant somewhere OR make an HLC(high level config) class that is passed around 
         # for object creation
         self.distance = 4       # 4 meters
         self.threshold = 0.5    # 0.5 meters
 
-        logger.info("Sensor setup complete")
+        logger.info("FakeSensor setup complete")
          
     def get_distance(self) -> float:
         # this means the motion detector is triggered after 7 distance checks: (4 - 0.5) / 0.5

@@ -41,3 +41,5 @@
         - Cons:
             - more complex implementation.
             - unsure how this will affect detection accuracy
+
+- Main and Camera process IPC consists of an input queue, and output queue, each of size 1. These queue communicate with the CameraComm enums. These single queues are useful for their blocking properties which limits the need to synchronization primitves, but it may be very tight bottle neck for performance. 

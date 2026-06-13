@@ -82,10 +82,7 @@ def build_test_system(settings: Settings, log_queue: Queue | None) -> DogDoorHar
         process_name="OutsideCameraProcess",
     )
 
-    door = Door([FakeServo(ServoNum.SERVO1),
-                 FakeServo(ServoNum.SERVO2),
-                 FakeServo(ServoNum.SERVO3),
-                 FakeServo(ServoNum.SERVO4)])
+    door = Door([FakeServo(s) for s in ServoNum])
     
     # Start camera processes
     inside_cam.start()
@@ -102,10 +99,8 @@ def build_test_system(settings: Settings, log_queue: Queue | None) -> DogDoorHar
 
 def build_prod_system(settings: Settings, log_queue: Queue | None) -> DogDoorHardware:
     # NOTE: not sure what the lifetime of door or other components will be here. may not persist outside this function
-    door = Door([RealServo(ServoNum.SERVO1),
-                 RealServo(ServoNum.SERVO2),
-                 RealServo(ServoNum.SERVO3),
-                 RealServo(ServoNum.SERVO4)])
+    door = Door(RealServo.make_servos())
+
     inside_cam = CameraManager(
         settings=settings,
         log_queue=log_queue,
